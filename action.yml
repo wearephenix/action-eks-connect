@@ -1,0 +1,60 @@
+name: 'Connect EKS'
+description: 'Install Kubectl, Helm and Helmfile, and create a Kubectl context to communicate with an EKS cluster'
+inputs:
+  kubectl-version:
+    description: 'Kubectl version to install'
+    required: true
+    default: v1.22.6
+  helm-version:
+    description: 'Helm version to install'
+    required: true
+    default: v3.7.0
+  helmfile-version:
+    description: 'Helmfile version to install'
+    required: true
+    default: v0.144.0
+  aws-access-key-id:
+    description: 'AWS access key ID to use'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS secret access key to use'
+    required: true
+  aws-region:
+    description: 'AWS region to use'
+    required: true
+    default: eu-west-1
+  eks-cluster-name:
+    description: 'Name of the EKS cluster'
+    required: true
+  kube-context-name:
+    description: 'Name of the kubectl context to create'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    # Install kubectl
+    - name: Install kubectl
+      run: curl -L -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${{ inputs.kubectl-version }}/bin/linux/amd64/kubectl && sudo chmod +x /usr/local/bin/kubectl
+      shell: bash
+    # Install Helm
+    - name: Get Helm archive
+      run: curl -L -o /tmp/helm.tar.gz https://get.helm.sh/helm-${{ inputs.helm-version }}-linux-amd64.tar.gz
+      shell: bash
+    - name: Setup Helm binary
+      run: cd /tmp && tar -zxvf helm.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && sudo chmod +x /usr/local/bin/helm
+      shell: bash
+    # Install Helmfile
+    - name: Get Helmfile
+      run: curl -L -o /usr/local/bin/helmfile https://github.com/roboll/helmfile/releases/download/${{ inputs.helmfile-version }}/helmfile_linux_amd64 && sudo chmod +x /usr/local/bin/helmfile
+      shell: bash
+    # Connect to AWS
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-region: ${{ inputs.aws-region }}
+    # Connect to EKS
+    - name: Connect to Kubernetes cluster
+      run: aws eks update-kubeconfig --name ${{ inputs.eks-cluster-name }} --alias ${{ inputs.kube-context-name }}
+      shell: bash
