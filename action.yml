@@ -4,15 +4,15 @@ inputs:
   kubectl-version:
     description: 'Kubectl version to install'
     required: true
-    default: v1.22.6
+    default: v1.26.4
   helm-version:
     description: 'Helm version to install'
     required: true
-    default: v3.7.0
+    default: v3.12.0
   helmfile-version:
     description: 'Helmfile version to install'
     required: true
-    default: v0.144.0
+    default: 0.153.1
   aws-access-key-id:
     description: 'AWS access key ID to use'
     required: true
@@ -44,8 +44,11 @@ runs:
       run: cd /tmp && tar -zxvf helm.tar.gz && mv linux-amd64/helm /usr/local/bin/helm && sudo chmod +x /usr/local/bin/helm
       shell: bash
     # Install Helmfile
-    - name: Get Helmfile
-      run: curl -L -o /usr/local/bin/helmfile https://github.com/roboll/helmfile/releases/download/${{ inputs.helmfile-version }}/helmfile_linux_amd64 && sudo chmod +x /usr/local/bin/helmfile
+    - name: Get Helmfile archive
+      run: curl -L -o /tmp/helmfile.tar.gz https://github.com/helmfile/helmfile/releases/download/v${{ inputs.helmfile-version }}/helmfile_${{ inputs.helmfile-version }}_linux_amd64.tar.gz
+      shell: bash
+    - name: Setup Helmfile binary
+      run: cd /tmp && tar -zxvf helmfile.tar.gz && mv ./helmfile /usr/local/bin/helmfile && sudo chmod +x /usr/local/bin/helmfile
       shell: bash
     # Connect to AWS
     - name: Configure AWS credentials
